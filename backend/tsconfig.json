@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es6",                     // Compatible Node.js moderne
+    "module": "commonjs",                // Node.js utilise CommonJS
+    "rootDir": "./src",                  // Où se trouvent tes fichiers TS
+    "outDir": "./dist",                  // Où compiler le JS
+    "strict": true,                      // Mode strict TypeScript
+    "esModuleInterop": true,             // Pour importer express, dotenv, etc.
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,                // Ignore les vérifications de type des libs
+    "sourceMap": true,                   // Génère les fichiers .map
+    "moduleResolution": "node",          // Pour résoudre correctement les modules Node
+    "types": ["node"]                    // Ajoute les types Node
+  },
+  "include": ["src"]
+}
