@@ -13,6 +13,10 @@ pnpm dev
 # or
 bun dev
 ```
+- HeidiSQL_12.13.0.7147_Setup.exe
+- mysql-installer-community-8.0.44.0.msi
+- node-v20.19.6-x64.msi
+- Express
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
