@@ -3,12 +3,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mysql from 'mysql2/promise';
 import jobsRouter from './routes/jobs';
-import authRouter from './routes/auth';
-import registerRouter from './routes/register';
-import userRouter from './routes/user';
-import universitiesRouter from './routes/universities';
+import authRouter from './routes/authRoutes';
+import userRouter from './routes/userRoutes';
+import universitiesRouter from './routes/universitiesRouter';
 import path from 'path';
 import multer from 'multer';
+import registerRouter from "./routes/registerRoutes";
 
 dotenv.config();
 
@@ -45,7 +45,9 @@ const upload = multer({ storage });
 // Routes existantes
 app.use('/api/jobs', jobsRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/register', registerRouter);
+app.use('/api/users', userRouter);
+
+app.use("/api/register", registerRouter);
 app.use('/api/user', userRouter);
 app.use('/api/universities', universitiesRouter);
 

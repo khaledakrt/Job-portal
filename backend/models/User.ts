@@ -9,4 +9,5 @@ export interface User {
   password: string;
   role: 'candidate' | 'recruiter';
   created_at?: string;
+  languages?: string[];
 }

@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 export default function Navbar() {
   const router = useRouter();
   const [isLogged, setIsLogged] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // Pour le menu mobile
 
   // Vérifie si l'utilisateur est connecté
   const checkUser = () => {
@@ -24,20 +25,21 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("user");
     window.dispatchEvent(new Event("authChange"));
-    router.push("/login");
+    router.push("/auth/login"); // Redirection après logout
   };
 
   const guestLinks = [
     { href: "/", label: "Accueil" },
     { href: "/jobs", label: "Offres" },
-    { href: "/register", label: "S'inscrire" },
-    { href: "/login", label: "Connexion" },
+    { href: "/auth/register", label: "S'inscrire" },
+    { href: "/auth/login", label: "Connexion" },
   ];
 
   const authLinks = [
     { href: "/", label: "Accueil" },
     { href: "/jobs", label: "Offres" },
-    { href: "/profile", label: "Profil" },
+      { href: "/candidate/profile", label: "Profil" }, // <--- ici
+
   ];
 
   const links = isLogged ? authLinks : guestLinks;
@@ -46,23 +48,32 @@ export default function Navbar() {
     <nav className="bg-primary text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <Link href="/" className="text-2xl font-bold hover:text-yellow transition">
+          <Link
+            href="/"
+            className="text-2xl font-bold hover:text-yellow transition"
+          >
             JobPortal
           </Link>
 
+          {/* Desktop */}
           <div className="hidden md:flex space-x-6 items-center">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`hover:text-yellow transition ${router.pathname === link.href ? "underline" : ""}`}
+                className={`hover:text-yellow transition ${
+                  router.pathname === link.href ? "underline" : ""
+                }`}
               >
                 {link.label}
               </Link>
             ))}
 
             {isLogged && (
-              <button onClick={handleLogout} className="ml-4 hover:text-yellow">
+              <button
+                onClick={handleLogout}
+                className="ml-4 hover:text-yellow"
+              >
                 Déconnexion
               </button>
             )}
@@ -70,11 +81,38 @@ export default function Navbar() {
 
           {/* Mobile */}
           <div className="md:hidden">
-            <button onClick={() => setIsLogged(!isLogged)} className="text-2xl">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-2xl focus:outline-none"
+            >
               ☰
             </button>
           </div>
         </div>
+
+        {/* Menu mobile */}
+        {isOpen && (
+          <div className="md:hidden flex flex-col space-y-2 mt-2 px-4 pb-4">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-yellow"
+                onClick={() => setIsOpen(false)} // Fermer le menu au clic
+              >
+                {link.label}
+              </Link>
+            ))}
+            {isLogged && (
+              <button
+                onClick={handleLogout}
+                className="hover:text-yellow mt-2"
+              >
+                Déconnexion
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );
