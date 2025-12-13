@@ -2,9 +2,5 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/candidate/profile": "pages/candidate/profile.js",
-  "/auth/login": "pages/auth/login.js",
-  "/jobs": "pages/jobs.js",
-  "/auth/register": "pages/auth/register.js",
-  "/": "pages/index.js"
+  "/candidate/profile": "pages/candidate/profile.js"
 }

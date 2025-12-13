@@ -9,6 +9,8 @@ import universitiesRouter from './routes/universitiesRouter';
 import path from 'path';
 import multer from 'multer';
 import registerRouter from "./routes/registerRoutes";
+import choiceRoute from "./routes/choiceRoute";
+import { updateUserLanguages } from "./controllers/userController";
 
 dotenv.config();
 
@@ -80,6 +82,8 @@ app.get('/api/user/:id', async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
-
+// Route choices
+app.use("/api/choices", choiceRoute);
+app.put("/users/:id/languages", updateUserLanguages);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));

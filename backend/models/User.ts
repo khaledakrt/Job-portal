@@ -10,4 +10,6 @@ export interface User {
   role: 'candidate' | 'recruiter';
   created_at?: string;
   languages?: string[];
+  summary: string;
+
 }

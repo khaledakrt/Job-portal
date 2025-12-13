@@ -14,18 +14,45 @@ export type Experience = {
   description?: string;
 };
 
-export type User = {
-  id: number;
-  name: string;
-  last_name: string;
-  birthDate: string;
-  lastTitle: string;
-  photo?: string;
-  diplomas: Diploma[];
-  experiences: Experience[];
-};
+
+//export interface User {
+  //id?: number;
+ // name: string;
+  //last_name?: string;
+ // birthDate?: string;  // YYYY-MM-DD
+ // photo?: string;      // juste le nom ou chemin du fichier
+  //diplomas: Diploma[];
+ // experiences: Experience[];
+ // lastTitle?: string;
+ // email: string;
+ // password: string;
+ // role: 'candidate' | 'recruiter';
+ // created_at?: string;
+ // summary?: string;     // ← ajouté
+ // languages?: string[]; // ← ajouté
+ // skills?: string[];    // ← ajouté
+//};
+
 
 export type University = {
   id: number;
   name: string;
 };
+
+export interface User {
+  id?: number;
+  name: string;
+  last_name?: string;
+  birthDate?: string;  // YYYY-MM-DD
+  photo?: string;      // juste le nom ou chemin du fichier
+  diplomas: Diploma[];
+  experiences: Experience[];
+  lastTitle?: string;
+  email: string;
+  password: string;
+  role: 'candidate' | 'recruiter';
+  created_at?: string;
+  summary?: string;     // ← ajouté
+  languages?: string[]; // ← ajouté
+  skills?: string[];    // ← ajouté
+}

@@ -24,7 +24,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
 
   try {
     const [userRows]: any = await db.query(
-      "SELECT id, name, last_name, birthDate, photo FROM users WHERE id = ?",
+      "SELECT id, name, last_name, birthDate, photo, summary, languages, skills FROM users WHERE id = ?",
       [userId]
     );
 
@@ -49,37 +49,129 @@ export const getUserProfile = async (req: Request, res: Response) => {
       [userId]
     );
 
+    // ⚡ parser JSON pour languages et skills
+    const parsedLanguages = user.languages ? JSON.parse(user.languages) : [];
+    const parsedSkills = user.skills ? JSON.parse(user.skills) : [];
+
+    // Renvoi JSON **en gardant la structure existante**
     res.json({
-      ...user,
+      id: user.id,
+      name: user.name,
+      last_name: user.last_name,
+      birthDate: user.birthDate,
       photo: user.photo || null,
+      summary: user.summary || "",
       lastTitle: lastExp.length ? lastExp[0].title : null,
       diplomas,
       experiences,
+      languages: parsedLanguages,
+      skills: parsedSkills,
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error", error: err });
   }
 };
+
+
+// ---------------------------------------------------------
+// 7️⃣ Update Langues
+// ---------------------------------------------------------
+export const updateUserLanguages = async (req: Request, res: Response) => {
+  const userId = req.params.id;
+  const { languages } = req.body;
+
+  if (!Array.isArray(languages))
+    return res.status(400).json({ message: "Invalid languages data" });
+
+  try {
+    // Stocker directement comme JSON
+    await db.query("UPDATE users SET languages = ? WHERE id = ?", [
+  JSON.stringify(languages), // languages doit être un array, pas une string
+  userId,
+]);
+
+    // Récupérer l'utilisateur mis à jour
+    const [userRows]: any = await db.query(
+      "SELECT id, name, last_name, birthDate, photo, summary, languages, skills FROM users WHERE id = ?",
+      [userId]
+    );
+
+    const user = userRows[0];
+    // Convertir la colonne JSON en tableau JS
+  user.languages = user.languages ? JSON.parse(user.languages) : [];
+  user.skills = user.skills ? JSON.parse(user.skills) : [];
+
+     // Retourner l'utilisateur au frontend
+  res.json(user);
+} catch (err) {
+  console.error(err);
+  res.status(500).json({ message: "Server error", error: err });
+}
+};
+
+
+// ---------------------------------------------------------
+// 8️⃣ Update Compétences
+// ---------------------------------------------------------
+export const updateUserSkills = async (req: Request, res: Response) => {
+  const userId = req.params.id;
+  const { skills } = req.body;
+
+  if (!Array.isArray(skills))
+    return res.status(400).json({ message: "Invalid skills data" });
+
+  try {
+    // Stocker directement comme JSON
+    await db.query("UPDATE users SET skills = ? WHERE id = ?", [
+      JSON.stringify(skills), // <-- important
+      userId,
+    ]);
+
+    // Récupérer l'utilisateur mis à jour
+    const [userRows]: any = await db.query(
+      "SELECT id, name, last_name, birthDate, photo, summary, languages, skills FROM users WHERE id = ?",
+      [userId]
+    );
+
+    const user = userRows[0];
+    // Convertir la colonne JSON en tableau JS
+    user.languages = user.languages ? JSON.parse(user.languages) : [];
+    user.skills = user.skills ? JSON.parse(user.skills) : [];
+
+    // Retourner l'utilisateur au frontend
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+
+
+
 
 // ---------------------------------------------------------
 // 2️⃣ UPDATE user + photo
 // ---------------------------------------------------------
 export const updateUserProfile = async (req: Request, res: Response) => {
   const userId = req.params.id;
-  const { name, last_name, birthDate, lastTitle } = req.body;
+const { name, last_name, birthDate, lastTitle, summary } = req.body;
   const photo = req.file?.filename;
 
   try {
     await db.query(
-      `UPDATE users SET 
-        name = ?, 
-        last_name = ?, 
-        birthDate = ?, 
-        photo = COALESCE(?, photo),
-        lastTitle = ?
-       WHERE id = ?`,
-      [name, last_name, birthDate, photo, lastTitle, userId]
-    );
+  `UPDATE users SET 
+    name = ?, 
+    last_name = ?, 
+    birthDate = ?, 
+    photo = COALESCE(?, photo),
+    lastTitle = ?,
+    summary = ?
+   WHERE id = ?`,
+  [name, last_name, birthDate, photo, lastTitle, summary, userId]
+);
+
 
     return getUserProfile(req, res);
   } catch (err) {
@@ -194,4 +286,8 @@ export const updateAllExperiences = async (req: Request, res: Response) => {
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
   }
+  const [userRows]: any = await db.query(
+  "SELECT id, name, last_name, birthDate, photo, summary FROM users WHERE id = ?",
+  [userId]
+);
 };
