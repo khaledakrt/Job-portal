@@ -22,3 +22,11 @@ export interface UserData {
   education?: string;
   experiences?: any[];
 }
+export interface RegisterRecruiterData {
+  company_name: string;
+  email: string;
+  password: string;
+  role: 'recruiter';
+  address: string;
+  phoneNumber: string;
+}

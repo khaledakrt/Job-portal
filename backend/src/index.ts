@@ -11,11 +11,14 @@ import multer from 'multer';
 import registerRouter from "./routes/registerRoutes";
 import choiceRoute from "./routes/choiceRoute";
 import { updateUserLanguages } from "./controllers/userController";
+import recruiterRoutes from "./routes/recruiterRoutes";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
+//app.use(cors({ origin: "http://localhost:3000" }));
+
 app.use(express.json());
 
 // 📌 Servir les fichiers uploadés
@@ -52,6 +55,7 @@ app.use('/api/users', userRouter);
 app.use("/api/register", registerRouter);
 app.use('/api/user', userRouter);
 app.use('/api/universities', universitiesRouter);
+app.use("/api/recruiter", recruiterRoutes);
 
 // 📌 Route pour uploader la photo d'un utilisateur
 app.post('/api/user/:id/photo', upload.single('photo'), async (req, res) => {
@@ -82,6 +86,12 @@ app.get('/api/user/:id', async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
+app.use('/uploads', express.static('uploads', {
+  setHeaders: (res) => res.set('Access-Control-Allow-Origin', '*')
+}));
 // Route choices
 app.use("/api/choices", choiceRoute);
 app.put("/users/:id/languages", updateUserLanguages);

@@ -6,13 +6,21 @@ import { useState, useEffect } from "react";
 export default function Navbar() {
   const router = useRouter();
   const [isLogged, setIsLogged] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // Pour le menu mobile
+  const [isOpen, setIsOpen] = useState(false);
+  const [userRole, setUserRole] = useState<"recruiter" | "candidate" | null>(null);
 
-  // Vérifie si l'utilisateur est connecté
   const checkUser = () => {
     if (typeof window === "undefined") return;
-    const user = localStorage.getItem("user");
-    setIsLogged(!!user);
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setIsLogged(true);
+      // Assurer que role est bien défini
+      setUserRole(user.role === "recruiter" ? "recruiter" : "candidate");
+    } else {
+      setIsLogged(false);
+      setUserRole(null);
+    }
   };
 
   useEffect(() => {
@@ -25,7 +33,7 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("user");
     window.dispatchEvent(new Event("authChange"));
-    router.push("/auth/login"); // Redirection après logout
+    router.push("/auth/login");
   };
 
   const guestLinks = [
@@ -38,9 +46,16 @@ export default function Navbar() {
   const authLinks = [
     { href: "/", label: "Accueil" },
     { href: "/jobs", label: "Offres" },
-      { href: "/candidate/profile", label: "Profil" }, // <--- ici
-
   ];
+
+  // Ajouter le bon lien Profil selon le rôle
+  if (isLogged) {
+    if (userRole === "recruiter") {
+      authLinks.push({ href: "/recruiter/RecruiterDashboard", label: "Profil" });
+    } else {
+      authLinks.push({ href: "/candidate/profile", label: "Profil" });
+    }
+  }
 
   const links = isLogged ? authLinks : guestLinks;
 
@@ -48,10 +63,7 @@ export default function Navbar() {
     <nav className="bg-primary text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <Link
-            href="/"
-            className="text-2xl font-bold hover:text-yellow transition"
-          >
+          <Link href="/" className="text-2xl font-bold hover:text-yellow transition">
             JobPortal
           </Link>
 
@@ -70,10 +82,7 @@ export default function Navbar() {
             ))}
 
             {isLogged && (
-              <button
-                onClick={handleLogout}
-                className="ml-4 hover:text-yellow"
-              >
+              <button onClick={handleLogout} className="ml-4 hover:text-yellow">
                 Déconnexion
               </button>
             )}
@@ -81,10 +90,7 @@ export default function Navbar() {
 
           {/* Mobile */}
           <div className="md:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-2xl focus:outline-none"
-            >
+            <button onClick={() => setIsOpen(!isOpen)} className="text-2xl focus:outline-none">
               ☰
             </button>
           </div>
@@ -98,16 +104,13 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className="hover:text-yellow"
-                onClick={() => setIsOpen(false)} // Fermer le menu au clic
+                onClick={() => setIsOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
             {isLogged && (
-              <button
-                onClick={handleLogout}
-                className="hover:text-yellow mt-2"
-              >
+              <button onClick={handleLogout} className="hover:text-yellow mt-2">
                 Déconnexion
               </button>
             )}

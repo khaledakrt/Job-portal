@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { loginUser } from '../../services/authService';
-import { LoginData, UserData } from '../../types/auth';
+import { loginUser, loginRecruiter } from '../../services/authService';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [role, setRole] = useState<'candidate' | 'recruiter'>('candidate');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -13,20 +13,22 @@ export default function LoginPage() {
     e.preventDefault();
     setMessage('');
 
-    const loginData: LoginData = { email, password };
-
     try {
-      const user: UserData = await loginUser(loginData);
+      let result;
 
-      // Stocker l'utilisateur dans localStorage
-      localStorage.setItem('user', JSON.stringify(user));
+      if (role === 'candidate') {
+  const result = await loginUser({ email, password });
+  const userData = { ...result, role: 'candidate' }; // <-- pas result.user
+  localStorage.setItem('user', JSON.stringify(userData));
+  router.push('/candidate/profile');
+} else {
+  const result = await loginRecruiter({ email, password });
+  const userData = { ...result, role: 'recruiter' }; // <-- pas result.user
+  localStorage.setItem('user', JSON.stringify(userData));
+  router.push('/recruiter/RecruiterDashboard');
+}
 
-      // Déclencher un event pour mettre à jour le Navbar
-      window.dispatchEvent(new Event('authChange'));
-
-      // Rediriger vers le profil
-      router.push('/candidate/profile');
-
+      console.log('Connexion réussie :', result);
     } catch (err: any) {
       console.error(err);
       setMessage(err.message || 'Erreur serveur');
@@ -37,6 +39,16 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow w-96">
         <h1 className="text-2xl font-bold mb-4">Connexion</h1>
+
+        {/* Sélecteur de rôle */}
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value as 'candidate' | 'recruiter')}
+          className="w-full p-2 mb-6 border rounded"
+        >
+          <option value="candidate">Candidat</option>
+          <option value="recruiter">Recruteur</option>
+        </select>
 
         <input
           type="email"

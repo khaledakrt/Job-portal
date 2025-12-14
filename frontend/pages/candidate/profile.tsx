@@ -1,5 +1,5 @@
 // pages/profile.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import { User, Diploma, Experience, University } from "../../types/user";
 import {
@@ -15,10 +15,25 @@ import {
   updateUserSkills     // <- ajouté
 } from "../../services/userService";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import CvPdf from "../../components/cv/CvPdf";
 
 export default function Profile() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+const cvRef = useRef<HTMLDivElement>(null);
+
+// Fonction utilitaire pour convertir une image en Base64
+  const toBase64 = (url: string): Promise<string> =>
+  fetch(url)
+    .then(res => res.blob())
+    .then(blob => new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    }));
+
 
   // Infos personnelles
   const [firstName, setFirstName] = useState("");
@@ -67,47 +82,153 @@ export default function Profile() {
   const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
 
 
+// Utilitaire pour attendre que toutes les images soient chargées
+const waitForImages = async (element: HTMLElement) => {
+  const images = Array.from(element.querySelectorAll("img"));
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+    })
+  );
+};
+
 const handleDownloadPDF = () => {
   if (!user) return;
 
-  const doc = new jsPDF();
+  const pdf = new jsPDF("p", "mm", "a4");
+  const margin = 10;
+  let y = margin;
 
-  doc.setFontSize(18);
-  doc.text("Profil Candidat", 10, 20);
+ // Nom, date de naissance et dernier poste
+pdf.setFontSize(20);
+pdf.setFont("helvetica", "bold");
+pdf.setTextColor(20, 20, 100);
+pdf.text(`${user.name} ${user.last_name}`, margin, y);
+y += 10;
 
-  doc.setFontSize(14);
-  doc.text(`Nom : ${user.name} ${user.last_name}`, 10, 40);
-  doc.text(`Date de naissance : ${user.birthDate}`, 10, 50);
-  doc.text(`Résumé : ${user.summary || "Aucun résumé"}`, 10, 60);
+pdf.setFontSize(12);
+pdf.setFont("helvetica", "normal");
+pdf.setTextColor(0, 0, 0);
+
+// Date de naissance
+if (user.birthDate) {
+  pdf.text(`Date de naissance: ${user.birthDate}`, margin, y);
+  y += 7;
+}
+
+// Dernier poste
+if (user.lastTitle) {
+  pdf.text(`Dernier poste: ${user.lastTitle}`, margin, y);
+  y += 12;
+}
+
+  // Résumé
+  if (user.summary) {
+    pdf.setFontSize(12);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+    const summaryLines = pdf.splitTextToSize(`Résumé: ${user.summary}`, 190);
+    pdf.text(summaryLines, margin, y);
+    y += summaryLines.length * 7 + 5;
+  }
 
   // Langues
-  doc.text(`Langues : ${user.languages?.join(", ") || "Aucune"}`, 10, 70);
+  if (user.languages?.length) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(50, 50, 150);
+    pdf.text("Langues:", margin, y);
+    y += 7;
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+    user.languages.forEach(lang => {
+      pdf.text(`- ${lang}`, margin + 5, y);
+      y += 7;
+    });
+    y += 5;
+  }
 
   // Compétences
-  doc.text(`Compétences : ${user.skills?.join(", ") || "Aucune"}`, 10, 80);
+  if (user.skills?.length) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(150, 50, 50);
+    pdf.text("Compétences:", margin, y);
+    y += 7;
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
+    user.skills.forEach(skill => {
+      pdf.text(`- ${skill}`, margin + 5, y);
+      y += 7;
+    });
+    y += 5;
+  }
 
   // Diplômes
   if (user.diplomas?.length) {
-    let y = 90;
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 100, 0);
+    pdf.text("Diplômes:", margin, y);
+    y += 7;
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
     user.diplomas.forEach(d => {
-      doc.text(`Diplôme : ${d.level}, Université : ${d.university}, Année : ${d.year}`, 10, y);
-      y += 10;
+      pdf.text(`${d.level} - ${d.university} (${d.year})`, margin + 5, y);
+      y += 7;
     });
+    y += 5;
   }
 
-  // Expériences
+  // Expériences professionnelles
   if (user.experiences?.length) {
-    let y = 120;
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 50, 100);
+    pdf.text("Expériences professionnelles:", margin, y);
+    y += 7;
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(0, 0, 0);
     user.experiences.forEach(exp => {
-      doc.text(`Poste : ${exp.title} | ${exp.company}`, 10, y);
-      doc.text(`Période : ${exp.startDate} — ${exp.endDate || "Aujourd'hui"}`, 10, y + 10);
-      doc.text(`Description : ${exp.description}`, 10, y + 20);
-      y += 30;
+      pdf.text(`${exp.title} | ${exp.company}`, margin + 5, y);
+      y += 6;
+      pdf.text(`${exp.startDate} - ${exp.endDate || "Aujourd'hui"}`, margin + 5, y);
+      y += 6;
+
+      if (exp.description) {
+        const descLines = pdf.splitTextToSize(exp.description, 190);
+        descLines.forEach((line: string) => {
+          pdf.text(`- ${line}`, margin + 5, y);
+          y += 6;
+        });
+        y += 4; // petit espace après chaque expérience
+      }
     });
   }
 
-  doc.save("profil.pdf");
+  pdf.save("cv.pdf");
 };
+
+
+
+
+
+
+
+// Utilitaire pour convertir une image en Base64
+const imgToBase64 = async (url: string): Promise<string> => {
+  const res = await fetch(url, { mode: "cors" });
+  const blob = await res.blob();
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+
+
 
   
   // Charger utilisateur
@@ -310,10 +431,11 @@ const handleDownloadPDF = () => {
         <div className="flex items-start space-x-10">
           <div>
             <img
-              src={user?.photo ? `http://localhost:5000/uploads/${user.photo}` : "/default-avatar.png"}
-              alt="Photo profil"
-              className="w-40 h-40 rounded-full border object-cover"
-            />
+  src={user.photo ? `http://localhost:5000/uploads/${user.photo}` : "/default-avatar.png"}
+  alt="Photo"
+  className="w-28 h-28 object-cover rounded-full border"
+/>
+
             {editProfile && (
               <input
                 type="file"
@@ -777,13 +899,14 @@ const handleDownloadPDF = () => {
   </div>
   
 )}
-
-
 </div>
-
 <div className="max-w-5xl mx-auto bg-white rounded shadow p-6 space-y-8 relative">
   {/* tout ton contenu existant ... */}
 
+  {/* CV PDF (caché à l’écran) */}
+  <div className="hidden">
+    <CvPdf ref={cvRef} user={user} />
+  </div>
   {/* BOUTON TÉLÉCHARGER CV */}
   <button
     onClick={handleDownloadPDF}
@@ -792,12 +915,7 @@ const handleDownloadPDF = () => {
     Télécharger CV
   </button>
 </div>
-
-      
-      
-      
-      
-      
+  
       </div>
       
     </div>
